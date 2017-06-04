@@ -1,0 +1,13 @@
+{
+  "name": "slack-mopidy",
+  "version": "1.0.0",
+  "main": "main.js",
+  "repository": "git@github.com:tomkel/slack-mopidy.git",
+  "author": "Tommy Kelly <git@tkel.ly>",
+  "license": "AGPL-3.0+",
+  "dependencies": {
+    "body-parser": "^1.17.2",
+    "express": "^4.15.3",
+    "node-fetch": "next"
+  }
+}
