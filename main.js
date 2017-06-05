@@ -72,7 +72,7 @@ const mopidyCommand = (() => {
 app.post('/play', (req, res) => {
   // TODO play a specific URI
   let promise
-  if (req.body.text) {
+  if (req.body.text.includes('spotify')) {
     promise = mopidyCommand('clear')
       .then(() => mopidyCommand('queue', req.body.text))
   } else {
@@ -92,9 +92,13 @@ app.post('/play', (req, res) => {
 })
 
 app.post('/queue', (req, res) => {
-  mopidyCommand('queue', req.body.text)
-    .then(() => res.sendStatus(200))
-    .catch(err => res.status(500).send(err))
+  if (!res.body.text.includes('spotify')) {
+    res.status(500).send('Bad Spotify URI')
+  } else {
+    mopidyCommand('queue', req.body.text)
+      .then(() => res.sendStatus(200))
+      .catch(err => res.status(500).send(err))
+  }
 })
 
 app.post('/pause', (req, res) => {
