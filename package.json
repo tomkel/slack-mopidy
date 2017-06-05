@@ -5,9 +5,15 @@
   "repository": "git@github.com:tomkel/slack-mopidy.git",
   "author": "Tommy Kelly <git@tkel.ly>",
   "license": "AGPL-3.0+",
+  "scripts": {
+    "start": "nodemon --inspect main.js"
+  },
   "dependencies": {
     "body-parser": "^1.17.2",
     "express": "^4.15.3",
     "node-fetch": "next"
+  },
+  "devDependencies": {
+    "nodemon": "^1.11.0"
   }
 }
