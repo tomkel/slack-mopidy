@@ -6,7 +6,8 @@
   "author": "Tommy Kelly <git@tkel.ly>",
   "license": "AGPL-3.0+",
   "scripts": {
-    "start": "nodemon --inspect main.js"
+    "start": "nodemon --inspect main.js",
+    "prod": "node main.js"
   },
   "dependencies": {
     "body-parser": "^1.17.2",

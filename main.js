@@ -10,8 +10,14 @@ const MOPIDY_HOST = 'http://localhost:6680/mopidy/rpc'
 app.use(bodyParser.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded
 app.use(bodyParser.json()) // for parsing application/json
 
+const logRequests = (req, res, next) => {
+  console.log(req.url, req.body)
+  next()
+}
+app.use(logRequests)
+
 const verifyChannel = (req, res, next) => {
-  if (req.body.channel_name !== 'cts-la-music') {
+  if (req.body.channel_id !== 'G5P8SJYKH') {
     res.status(500).send('Only for LA')
   } else {
     next()
@@ -59,7 +65,7 @@ const mopidyCommand = (() => {
     return fetch(MOPIDY_HOST, { method: 'POST', body })
       .then(res => res.json())
       .then(({ error, result }) => {
-        console.log('sent', body, ' - result', result)
+        console.log('sent', body, '- result -', result)
         if (error) {
           console.error('error', error)
           return Promise.reject(error.message)
@@ -69,10 +75,18 @@ const mopidyCommand = (() => {
   }
 })()
 
+const inChannelResponse = (res, text = "Success!") => {
+  const responseData = {
+    response_type: "in_channel",
+    text,
+  }
+  res.status(200).send(responseData)
+}
+
 app.post('/play', (req, res) => {
   // TODO play a specific URI
   let promise
-  if (req.body.text.includes('spotify')) {
+  if (req.body.text && req.body.text.includes('spotify')) {
     promise = mopidyCommand('clear')
       .then(() => mopidyCommand('queue', req.body.text))
   } else {
@@ -87,7 +101,7 @@ app.post('/play', (req, res) => {
       }
       return null
     })
-    .then(() => res.sendStatus(200))
+    .then(() => inChannelResponse(res))
     .catch(err => res.status(500).send(err))
 })
 
@@ -96,26 +110,29 @@ app.post('/queue', (req, res) => {
     res.status(500).send('Bad Spotify URI')
   } else {
     mopidyCommand('queue', req.body.text)
-      .then(() => res.sendStatus(200))
+      .then(() => inChannelResponse(res, `Song queued`))
       .catch(err => res.status(500).send(err))
   }
 })
 
 app.post('/pause', (req, res) => {
   mopidyCommand('pause')
-    .then(() => res.sendStatus(200))
+    .then(() => inChannelResponse(res, `Music paused`))
     .catch(err => res.status(500).send(err))
 })
 
 app.post('/skip', (req, res) => {
   mopidyCommand('skip')
-    .then(() => res.sendStatus(200))
+    .then(() => inChannelResponse(res, `Song skipped`))
     .catch(err => res.status(500).send(err))
 })
 
 app.post('/volume', (req, res) => {
+  if (!req.body.text) {
+    //mopidyCommand('getVolume')
+  }
   mopidyCommand('volume', Number(req.body.text) * 10)
-    .then(() => res.sendStatus(200))
+    .then(() => inChannelResponse(res, `Volume set to ${req.body.text}`))
     .catch(err => res.status(500).send(err))
 })
 
