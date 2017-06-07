@@ -1,12 +1,11 @@
-const fs = require('fs')
-const https = require('https')
 const fetch = require('node-fetch')
 const express = require('express')
 const bodyParser = require('body-parser')
 
+const MOPIDY_HOST = 'http://localhost:6680/mopidy/rpc'
+const POST_TO_CHANNEL_HOOK = 'https://hooks.slack.com/services/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'
 
 const app = express()
-const MOPIDY_HOST = 'http://localhost:6680/mopidy/rpc'
 app.use(bodyParser.urlencoded({ extended: true })) // for parsing application/x-www-form-urlencoded
 app.use(bodyParser.json()) // for parsing application/json
 
@@ -24,6 +23,29 @@ const verifyChannel = (req, res, next) => {
   }
 }
 app.use(verifyChannel)
+
+const inChannelResponse = (res, text = 'Success!') => {
+  const responseData = {
+    response_type: 'in_channel',
+    text,
+  }
+  res.status(200).send(responseData)
+}
+
+const postToChannel = (text) => {
+  let body = { text }
+  body = JSON.stringyify(body)
+  const headers = { 'Content-Type': 'application/json' }
+  fetch(POST_TO_CHANNEL_HOOK, { method: 'POST', body, headers })
+    .then((res) => {
+      if (!res.ok) {
+        return Promise.reject(res.text())
+      }
+      return res.json()
+    })
+    .then(res => console.log('Posted to channel', res))
+    .catch(e => console.error('Failed to post to channel:', e))
+}
 
 const commandEncode = {
   play: 'core.playback.play',
@@ -75,16 +97,7 @@ const mopidyCommand = (() => {
   }
 })()
 
-const inChannelResponse = (res, text = "Success!") => {
-  const responseData = {
-    response_type: "in_channel",
-    text,
-  }
-  res.status(200).send(responseData)
-}
-
 app.post('/play', (req, res) => {
-  // TODO play a specific URI
   let promise
   if (req.body.text && req.body.text.includes('spotify')) {
     promise = mopidyCommand('clear')
@@ -106,24 +119,26 @@ app.post('/play', (req, res) => {
 })
 
 app.post('/queue', (req, res) => {
-  if (!res.body.text.includes('spotify')) {
+  if (!req.body.text) {
+    res.status(500).send('No URI specified')
+  } else if (!req.body.text.includes('spotify')) {
     res.status(500).send('Bad Spotify URI')
   } else {
     mopidyCommand('queue', req.body.text)
-      .then(() => inChannelResponse(res, `Song queued`))
+      .then(() => inChannelResponse(res, 'Song queued'))
       .catch(err => res.status(500).send(err))
   }
 })
 
 app.post('/pause', (req, res) => {
   mopidyCommand('pause')
-    .then(() => inChannelResponse(res, `Music paused`))
+    .then(() => inChannelResponse(res, 'Music paused'))
     .catch(err => res.status(500).send(err))
 })
 
 app.post('/skip', (req, res) => {
   mopidyCommand('skip')
-    .then(() => inChannelResponse(res, `Song skipped`))
+    .then(() => inChannelResponse(res, 'Song skipped'))
     .catch(err => res.status(500).send(err))
 })
 
@@ -136,13 +151,6 @@ app.post('/volume', (req, res) => {
     .catch(err => res.status(500).send(err))
 })
 
-//const httpsOptions = {
-//  key: fs.readFileSync('path/to/private.key'),
-//  cert: fs.readFileSync('path/to/certificate.pem'),
-//}
-//https.createServer(httpsOptions, app).listen(443, () => {
-//  console.log('slack-mopidy listening on port 443')
-//})
 app.listen(3000, () => {
   console.log('slack-mopidy listening on port 3000')
 })
