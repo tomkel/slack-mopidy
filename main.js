@@ -17,7 +17,7 @@ app.use(logRequests)
 
 const verifyChannel = (req, res, next) => {
   if (req.body.channel_id !== 'G5P8SJYKH') {
-    res.status(500).send('Only for LA')
+    res.status(200).send('Only for LA')
   } else {
     next()
   }
