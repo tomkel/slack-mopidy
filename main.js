@@ -24,20 +24,12 @@ const verifyChannel = (req, res, next) => {
 }
 app.use(verifyChannel)
 
-const preemptiveResponse = (req, res, next) => {
-  res.status(200).end()
-  next()
-}
-app.use(preemptiveResponse)
-
-const inChannelResponse = (req, text = 'Success!') => {
+const inChannelResponse = (res, text = 'Success!') => {
   const responseData = {
     response_type: 'in_channel',
     text,
   }
-  const body = JSON.stringify(responseData)
-  const headers = { 'Content-Type': 'application/json' }
-  fetch(req.body.response_url, { method: 'POST', body, headers })
+  res.status(200).send(responseData)
 }
 
 const postToChannel = (text) => {
@@ -54,11 +46,6 @@ const postToChannel = (text) => {
     .then(res => console.log('Posted to channel', res))
     .catch(e => console.error('Failed to post to channel:', e))
 }
-
-const sendError = req =>
-  (err) => {
-    inChannelResponse(req, err)
-  }
 
 const commandEncode = {
   play: 'core.playback.play',
@@ -127,8 +114,8 @@ app.post('/play', (req, res) => {
       }
       return null
     })
-    .then(() => inChannelResponse(req))
-    .catch(sendError(req))
+    .then(() => inChannelResponse(res))
+    .catch(err => res.status(500).send(err))
 })
 
 app.post('/queue', (req, res) => {
@@ -138,21 +125,21 @@ app.post('/queue', (req, res) => {
     res.status(500).send('Bad Spotify URI')
   } else {
     mopidyCommand('queue', req.body.text)
-      .then(() => inChannelResponse(req, 'Song queued'))
-      .catch(sendError(req))
+      .then(() => inChannelResponse(res, 'Song queued'))
+      .catch(err => res.status(500).send(err))
   }
 })
 
 app.post('/pause', (req, res) => {
   mopidyCommand('pause')
-    .then(() => inChannelResponse(req, 'Music paused'))
-    .catch(sendError(req))
+    .then(() => inChannelResponse(res, 'Music paused'))
+    .catch(err => res.status(500).send(err))
 })
 
 app.post('/skip', (req, res) => {
   mopidyCommand('skip')
-    .then(() => inChannelResponse(req, 'Song skipped'))
-    .catch(sendError(req))
+    .then(() => inChannelResponse(res, 'Song skipped'))
+    .catch(err => res.status(500).send(err))
 })
 
 app.post('/volume', (req, res) => {
@@ -160,8 +147,8 @@ app.post('/volume', (req, res) => {
     //mopidyCommand('getVolume')
   }
   mopidyCommand('volume', Number(req.body.text) * 10)
-    .then(() => inChannelResponse(req, `Volume set to ${req.body.text}`))
-    .catch(sendError(req))
+    .then(() => inChannelResponse(res, `Volume set to ${req.body.text}`))
+    .catch(err => res.status(500).send(err))
 })
 
 app.listen(3000, () => {
