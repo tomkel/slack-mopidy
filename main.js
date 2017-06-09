@@ -56,6 +56,7 @@ const commandEncode = {
   setPlaybackState: 'core.playback.set_state',
   queue: 'core.tracklist.add',
   clear: 'core.tracklist.clear',
+  shuffle: 'core.tracklist.shuffle',
   volume: 'core.mixer.set_volume',
 }
 
@@ -141,6 +142,12 @@ app.post('/skip', (req, res) => {
     .then(() => inChannelResponse(res, 'Song skipped'))
     .catch(err => res.status(500).send(err))
 })
+
+app.post('/shuffle', (req, res) => {
+  mopidyCommand('shuffle')
+    .then(() => inChannelResponse(res, 'Playlist shuffled'))
+    .catch(err => res.status(500).send(err))
+});
 
 app.post('/volume', (req, res) => {
   if (!req.body.text) {
